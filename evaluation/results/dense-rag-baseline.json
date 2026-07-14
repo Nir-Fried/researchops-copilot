@@ -1,0 +1,190 @@
+{
+  "evaluation_name": "dense-rag-baseline",
+  "created_at": "2026-07-14T20:10:35.709127+00:00",
+  "configuration": {
+    "retriever": "chroma_dense_similarity",
+    "embedding_model": "models/gemini-embedding-001",
+    "chat_model": "gemini-2.5-flash",
+    "k": 4
+  },
+  "summary": {
+    "total_cases": 6,
+    "passed_cases": 6,
+    "pass_rate": 1.0,
+    "answerability_accuracy": 1.0,
+    "retrieval_recall_at_k": 1.0,
+    "citation_page_accuracy": 1.0,
+    "average_term_coverage": 1.0
+  },
+  "results": [
+    {
+      "id": "scaled_dot_product_definition",
+      "question": "What is scaled dot-product attention?",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "answerability_correct": true,
+      "expected_pages": [
+        "4"
+      ],
+      "retrieved_pages": [
+        "4",
+        "5"
+      ],
+      "cited_pages": [
+        "4"
+      ],
+      "retrieval_hit_at_k": true,
+      "citation_page_hit": true,
+      "term_coverage": 1.0,
+      "matched_terms": [
+        "dot products",
+        "softmax",
+        "square root"
+      ],
+      "expected_terms": [
+        "dot products",
+        "softmax",
+        "square root"
+      ],
+      "answer": "Scaled Dot-Product Attention is an attention mechanism where the input consists of queries and keys of dimension d_k, and values of dimension d_v [S1]. It computes the dot products of the query with all keys, divides each by the square root of d_k (√d_k), and then applies a softmax function to derive the weights for the values [S1]. This process can be performed simultaneously on sets of queries, keys, and values packed into matrices Q, K, and V, with the output matrix computed as Attention(Q, K, V) = softmax(QK^T / √d_k)V [S1]. The scaling factor of 1/√d_k is used to counteract the effect of large dot product magnitudes for larger values of d_k, which can push the softmax function into regions with extremely small gradients [S1, S2]. Without this scaling factor, it is identical to dot-product (multiplicative) attention [S1, S2].",
+      "passed": true
+    },
+    {
+      "id": "bleu_score_typo",
+      "question": "What BLUE score did the model achieve on Englsih to German translation?",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "answerability_correct": true,
+      "expected_pages": [
+        "1",
+        "8"
+      ],
+      "retrieved_pages": [
+        "1",
+        "8"
+      ],
+      "cited_pages": [
+        "1",
+        "8"
+      ],
+      "retrieval_hit_at_k": true,
+      "citation_page_hit": true,
+      "term_coverage": 1.0,
+      "matched_terms": [
+        "28.4",
+        "BLEU"
+      ],
+      "expected_terms": [
+        "28.4",
+        "BLEU"
+      ],
+      "answer": "The Transformer (big) model achieved a BLEU score of 28.4 on the WMT 2014 English-to-German translation task, establishing a new state-of-the-art [S1, S4]. The Transformer base model achieved a BLEU score of 27.3 on the same task [S2].",
+      "passed": true
+    },
+    {
+      "id": "transformer_parallelization",
+      "question": "How does the Transformer reduce training time compared with recurrent models?",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "answerability_correct": true,
+      "expected_pages": [
+        "2"
+      ],
+      "retrieved_pages": [
+        "1",
+        "2",
+        "7"
+      ],
+      "cited_pages": [
+        "1",
+        "2"
+      ],
+      "retrieval_hit_at_k": true,
+      "citation_page_hit": true,
+      "term_coverage": 1.0,
+      "matched_terms": [
+        "sequential",
+        "parallel"
+      ],
+      "expected_terms": [
+        "sequential",
+        "parallel"
+      ],
+      "answer": "Recurrent models are inherently sequential, which prevents parallelization within training examples [S1]. In contrast, the Transformer model eschews recurrence and relies entirely on an attention mechanism, which allows for significantly more parallelization [S2]. This increased parallelization enables the Transformer to train in significantly less time compared to recurrent models [S2, S3]. For instance, it can achieve state-of-the-art translation quality after training for as little as twelve hours on eight P100 GPUs [S2], or establish a new state-of-the-art BLEU score for English-to-French translation after 3.5 days on eight GPUs, which is a small fraction of the training costs of other top models [S3].",
+      "passed": true
+    },
+    {
+      "id": "attention_heads",
+      "question": "How many parallel attention heads are used in the Transformer?",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "answerability_correct": true,
+      "expected_pages": [
+        "5"
+      ],
+      "retrieved_pages": [
+        "4",
+        "5",
+        "9"
+      ],
+      "cited_pages": [
+        "5",
+        "9"
+      ],
+      "retrieval_hit_at_k": true,
+      "citation_page_hit": true,
+      "term_coverage": 1.0,
+      "matched_terms": [
+        "8"
+      ],
+      "expected_terms": [
+        "8"
+      ],
+      "answer": "The Transformer model uses 8 parallel attention layers, also referred to as heads [S1, S3].",
+      "passed": true
+    },
+    {
+      "id": "favorite_food",
+      "question": "What was Ashish Vaswani's favorite food?",
+      "expected_answerable": false,
+      "actual_answerable": false,
+      "answerability_correct": true,
+      "expected_pages": [],
+      "retrieved_pages": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "cited_pages": [],
+      "retrieval_hit_at_k": null,
+      "citation_page_hit": true,
+      "term_coverage": 1.0,
+      "matched_terms": [],
+      "expected_terms": [],
+      "answer": "The available documents do not provide enough information to answer this question.",
+      "passed": true
+    },
+    {
+      "id": "gpu_temperature",
+      "question": "What was the GPU temperature during Transformer training?",
+      "expected_answerable": false,
+      "actual_answerable": false,
+      "answerability_correct": true,
+      "expected_pages": [],
+      "retrieved_pages": [
+        "7",
+        "8",
+        "9"
+      ],
+      "cited_pages": [],
+      "retrieval_hit_at_k": null,
+      "citation_page_hit": true,
+      "term_coverage": 1.0,
+      "matched_terms": [],
+      "expected_terms": [],
+      "answer": "The available documents do not provide enough information to answer this question.",
+      "passed": true
+    }
+  ]
+}

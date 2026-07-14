@@ -1,0 +1,56 @@
+[
+  {
+    "id": "scaled_dot_product_definition",
+    "question": "What is scaled dot-product attention?",
+    "answerable": true,
+    "expected_pages": [4],
+    "expected_terms": [
+      "dot products",
+      "softmax",
+      "square root"
+    ]
+  },
+  {
+    "id": "bleu_score_typo",
+    "question": "What BLUE score did the model achieve on Englsih to German translation?",
+    "answerable": true,
+    "expected_pages": [1, 8],
+    "expected_terms": [
+      "28.4",
+      "BLEU"
+    ]
+  },
+  {
+    "id": "transformer_parallelization",
+    "question": "How does the Transformer reduce training time compared with recurrent models?",
+    "answerable": true,
+    "expected_pages": [2],
+    "expected_terms": [
+      "sequential",
+      "parallel"
+    ]
+  },
+  {
+    "id": "attention_heads",
+    "question": "How many parallel attention heads are used in the Transformer?",
+    "answerable": true,
+    "expected_pages": [5],
+    "expected_terms": [
+      "8"
+    ]
+  },
+  {
+    "id": "favorite_food",
+    "question": "What was Ashish Vaswani's favorite food?",
+    "answerable": false,
+    "expected_pages": [],
+    "expected_terms": []
+  },
+  {
+    "id": "gpu_temperature",
+    "question": "What was the GPU temperature during Transformer training?",
+    "answerable": false,
+    "expected_pages": [],
+    "expected_terms": []
+  }
+]
