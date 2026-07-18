@@ -10,7 +10,12 @@ from researchops_copilot.rag.schemas import (
     GeneratedRAGAnswer,
     RAGResponse,
 )
-from researchops_copilot.retrieval.vector_store import get_vector_store
+#from researchops_copilot.retrieval.vector_store import get_vector_store
+
+from researchops_copilot.retrieval.retrievers import (
+    RetrieverStrategy,
+    retrieve_documents,
+)
 
 
 SYSTEM_PROMPT = """
@@ -170,6 +175,7 @@ def validate_generated_answer(
 def answer_question(
     question: str,
     k: int = 4,
+    retriever_strategy: RetrieverStrategy = "dense",
 ) -> RAGResponse:
     """Retrieve context and generate a citation-grounded answer."""
 
@@ -181,12 +187,18 @@ def answer_question(
     if k <= 0:
         raise ValueError("k must be greater than zero.")
 
-    vector_store = get_vector_store()
+    # vector_store = get_vector_store()
 
-    retrieved_documents = vector_store.similarity_search(
-        query=cleaned_question,
-        k=k,
-    )
+    # retrieved_documents = vector_store.similarity_search(
+    #     query=cleaned_question,
+    #     k=k,
+    # )
+
+    retrieved_documents = retrieve_documents(
+    query=cleaned_question,
+    k=k,
+    strategy=retriever_strategy,
+)
 
     if not retrieved_documents:
         return RAGResponse(

@@ -31,6 +31,14 @@ def create_argument_parser() -> argparse.ArgumentParser:
         help="Display every retrieved chunk after the answer.",
     )
 
+    parser.add_argument(
+    "--retriever",
+    type=str,
+    choices=["dense", "bm25", "hybrid"],
+    default="dense",
+    help="Retrieval strategy to use.",
+    )
+
     return parser
 
 
@@ -39,8 +47,9 @@ def main() -> None:
 
     try:
         response = answer_question(
-            question=args.question,
-            k=args.k,
+        question=args.question,
+        k=args.k,
+        retriever_strategy=args.retriever,
         )
 
         print("\nAnswer")
@@ -48,6 +57,7 @@ def main() -> None:
         print(response.answer)
 
         print("\nGrounded:", "yes" if response.answered else "no")
+        print("Retriever:", args.retriever)
 
         if response.citations:
             print("\nSources")
