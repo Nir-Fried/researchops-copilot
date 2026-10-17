@@ -1,8 +1,8 @@
 # ResearchOps Copilot
 
-A retrieval-augmented generation (RAG) system for asking questions about scientific and technical PDFs, with page-level citations.
+A retrieval-augmented generation (RAG) system for answering questions about scientific and technical PDF documents, with page-level citations.
 
-It supports both a standard two-step RAG pipeline and an optional LangGraph workflow that grades retrieved evidence, rewrites queries, retries retrieval, and abstains when evidence is insufficient.
+It supports a standard two-step RAG pipeline and an optional LangGraph workflow that evaluates retrieved evidence, rewrites queries when needed, and avoids generating answers that are not supported by the documents.
 
 ## Features
 
@@ -10,7 +10,7 @@ It supports both a standard two-step RAG pipeline and an optional LangGraph work
 - Gemini embeddings and answer generation, with persistent Chroma storage
 - Dense, BM25, and hybrid retrieval (reciprocal rank fusion)
 - Answers with page-level citations and source-reference validation
-- Optional agentic workflow with evidence grading, query rewriting, and bounded retries
+- Optional LangGraph workflow with evidence evaluation, query rewriting, and a configurable retry limit
 - Optional LangSmith tracing
 - Automated tests and a fixed-question evaluation script
 
@@ -29,10 +29,10 @@ flowchart TD
     E -->|Yes| G
     E -->|No, can retry| W[Rewrite query]
     W --> R
-    E -->|No, limit reached| X[Abstain]
+    E -->|No, limit reached| X[Report insufficient evidence]
 ```
 
-The index stores document chunks and their metadata. Retrieval can use dense similarity, BM25 keyword matching, or a hybrid of both. In **two-step RAG**, the retrieved chunks go directly to answer generation. In **agentic RAG**, LangGraph first grades the evidence and can retry with a rewritten query before generating an answer or abstaining. Generated citations are checked against the retrieved sources.
+The index stores text chunks along with their source information and page numbers. Retrieval supports dense semantic search, BM25 keyword search, or a hybrid approach combining both. With **two-step RAG**, retrieved chunks are passed directly to answer generation. With **agentic RAG**, LangGraph first evaluates whether the retrieved evidence is sufficient. If not, it can rewrite the query and search again, up to a configured limit. If there is still not enough evidence, the system does not generate an unsupported answer. Citations are checked to confirm that they refer to retrieved sources.
 
 ## Project structure
 
@@ -86,7 +86,7 @@ uv sync
 
 ### 3. Configure environment variables
 
-Create a local `.env` file from the provided template (PowerShell):
+In PowerShell, copy the environment template to create a local `.env` file:
 
 ```powershell
 Copy-Item env-example.env .env
@@ -108,7 +108,7 @@ LANGSMITH_TRACING=false
 
 Place one or more text-based PDF files in `data/documents/`.
 
-You can inspect PDF extraction and chunking before indexing:
+To check how PDF text is extracted and split into chunks before indexing:
 
 ```powershell
 uv run python scripts\inspect_pdf.py data\documents\your-paper.pdf
@@ -120,7 +120,7 @@ uv run python scripts\inspect_pdf.py data\documents\your-paper.pdf
 uv run python scripts\build_index.py --reset
 ```
 
-The generated Chroma database is stored in `data/vectorstore/` and is excluded from Git. The `--reset` option clears the existing collection before rebuilding the index.
+The Chroma database is saved to `data/vectorstore/` and is excluded from Git. The `--reset` option clears the existing index before building a new one.
 
 ## Search without generation
 
@@ -150,19 +150,19 @@ uv run python scripts\ask.py "Why are positional encodings necessary?" --retriev
 uv run python scripts\ask_agent.py "What is scaled dot-product attention?"
 ```
 
-To display the final retrieved evidence:
+To display the final retrieved text chunks:
 
 ```powershell
 uv run python scripts\ask_agent.py "What is scaled dot-product attention?" --show-context
 ```
 
-An example question for exploring query rewriting and abstention behavior:
+To check how the agent handles a question that the documents do not answer:
 
 ```powershell
 uv run python scripts\ask_agent.py "What is my favorite food?"
 ```
 
-The agentic CLI reports the retrieval strategy, attempted queries, evidence grade, retry count, whether the question was answered, and cited pages and chunks. The number of rewrites can be controlled with `--max-retries`.
+The agentic CLI reports the retrieval strategy, queries attempted, evidence evaluation, retry count, answer status, and cited pages and chunks. Use `--max-retries` to control the maximum number of query rewrites.
 
 ## Tests and evaluation
 
@@ -172,10 +172,10 @@ Run the automated tests:
 uv run pytest
 ```
 
-Run the fixed-question evaluation for the **dense two-step RAG baseline**:
+Run the evaluation script for the **dense two-step RAG baseline**:
 
 ```powershell
 uv run python evaluation\run_baseline.py
 ```
 
-The evaluation uses `evaluation/dataset.json` and writes results to `evaluation/results/dense-rag-baseline.json` by default. Index the relevant source PDFs first. The baseline script does **not** evaluate the agentic workflow or compare all three retrieval strategies.
+The script uses questions from `evaluation/dataset.json` and saves results to `evaluation/results/dense-rag-baseline.json` by default. Build an index from the relevant PDFs before running it. This evaluation covers **dense two-step RAG only**; it does not evaluate the agentic workflow or compare all three retrieval strategies.
