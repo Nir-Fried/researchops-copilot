@@ -1,74 +1,46 @@
 # ResearchOps Copilot
 
-A citation-grounded retrieval-augmented generation (RAG) system for scientific and technical PDFs.
+A retrieval-augmented generation (RAG) system for asking questions about scientific and technical PDFs, with page-level citations.
 
-The project includes an agentic LangGraph workflow that grades retrieved evidence, rewrites weak queries, retries retrieval, and abstains when the indexed documents do not contain enough information.
+It supports both a standard two-step RAG pipeline and an optional LangGraph workflow that grades retrieved evidence, rewrites queries, retries retrieval, and abstains when evidence is insufficient.
 
 ## Features
 
-- PDF ingestion with page-level metadata
-- Recursive, overlapping text chunking
-- Gemini embeddings and generation
-- Persistent Chroma vector storage
-- Dense semantic retrieval
-- BM25 keyword retrieval
-- Hybrid retrieval with reciprocal rank fusion
-- Citation-grounded answers with validated page references
-- Controlled abstention for unsupported questions
-- Agentic LangGraph retrieval workflow
-- Query rewriting and bounded retrieval retries
-- LangSmith tracing
-- Deterministic evaluation suite
-- Unit tests for chunking, citations, retrieval fusion, routing, and evaluation
+- PDF ingestion with page metadata and overlapping text chunks
+- Gemini embeddings and answer generation, with persistent Chroma storage
+- Dense, BM25, and hybrid retrieval (reciprocal rank fusion)
+- Answers with page-level citations and source-reference validation
+- Optional agentic workflow with evidence grading, query rewriting, and bounded retries
+- Optional LangSmith tracing
+- Automated tests and a fixed-question evaluation script
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    A[PDF documents] --> B[Page-aware loading]
-    B --> C[Recursive chunking]
-    C --> D[Gemini embeddings]
-    D --> E[(Chroma vector store)]
+    A[PDF documents] --> B[Extract pages and split into chunks]
+    B --> C[(Chroma document index)]
 
-    Q[User question] --> R{Retriever}
-    R -->|Dense| E
-    R -->|BM25| F[BM25 index]
-    R -->|Hybrid| G[Reciprocal rank fusion]
+    Q[User question] --> R[Retrieve relevant chunks]
+    C --> R
 
-    E --> G
-    F --> G
-
-    G --> H[Evidence grader]
-    H -->|Sufficient| I[Grounded answer generation]
-    H -->|Insufficient and retry available| J[Query rewriting]
-    J --> R
-    H -->|Retries exhausted| K[Abstain]
-
-    I --> L[Validated citations]
+    R -->|Two-step RAG| G[Generate answer with citations]
+    R -->|Agentic RAG| E{Enough evidence?}
+    E -->|Yes| G
+    E -->|No, can retry| W[Rewrite query]
+    W --> R
+    E -->|No, limit reached| X[Abstain]
 ```
 
-## Agentic workflow
-
-The LangGraph pipeline follows this path:
-
-```text
-Retrieve
-  -> Grade evidence
-      -> Generate answer
-      -> Rewrite query and retrieve again
-      -> Abstain when evidence remains insufficient
-```
-
-The workflow has a configurable retry limit to prevent unbounded loops.
-
+The index stores document chunks and their metadata. Retrieval can use dense similarity, BM25 keyword matching, or a hybrid of both. In **two-step RAG**, the retrieved chunks go directly to answer generation. In **agentic RAG**, LangGraph first grades the evidence and can retry with a rewritten query before generating an answer or abstaining. Generated citations are checked against the retrieved sources.
 
 ## Project structure
 
 ```text
 researchops-copilot/
 ├── data/
-│   ├── documents/
-│   └── vectorstore/              # Generated locally; not committed
+│   ├── documents/               # Place your PDFs here
+│   └── vectorstore/             # Generated locally; not committed
 ├── evaluation/
 │   ├── dataset.json
 │   ├── results/
@@ -89,8 +61,9 @@ researchops-copilot/
 │       ├── retrieval/
 │       └── models.py
 ├── tests/
-├── .env.example
+├── env-example.env
 ├── .gitignore
+├── .python-version
 ├── pyproject.toml
 ├── uv.lock
 └── README.md
@@ -101,7 +74,7 @@ researchops-copilot/
 ### 1. Clone the repository
 
 ```powershell
-git clone https://github.com/YOUR_USERNAME/researchops-copilot.git
+git clone https://github.com/Nir-Fried/researchops-copilot.git
 cd researchops-copilot
 ```
 
@@ -113,18 +86,19 @@ uv sync
 
 ### 3. Configure environment variables
 
-Copy and Fill in the values:
+Create a local `.env` file from the provided template (PowerShell):
+
+```powershell
+Copy-Item env-example.env .env
+```
+
+Edit `.env` and enter your Google API key:
 
 ```dotenv
 GOOGLE_API_KEY=your_google_api_key
-
-LANGSMITH_TRACING=true
-LANGSMITH_API_KEY=your_langsmith_api_key
-LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
-LANGSMITH_PROJECT=researchops-copilot-dev
 ```
 
-LangSmith is optional. To run without tracing, set:
+LangSmith tracing is optional. To run without tracing, set this in `.env`:
 
 ```dotenv
 LANGSMITH_TRACING=false
@@ -132,15 +106,9 @@ LANGSMITH_TRACING=false
 
 ## Add documents
 
-Place one or more text-based PDF files in:
+Place one or more text-based PDF files in `data/documents/`.
 
-```text
-data/documents/
-```
-
-Scanned image-only PDFs require OCR and are not supported by the current ingestion pipeline.
-
-Inspect extraction and chunking before indexing:
+You can inspect PDF extraction and chunking before indexing:
 
 ```powershell
 uv run python scripts\inspect_pdf.py data\documents\your-paper.pdf
@@ -152,7 +120,7 @@ uv run python scripts\inspect_pdf.py data\documents\your-paper.pdf
 uv run python scripts\build_index.py --reset
 ```
 
-The generated Chroma database is stored in `data/vectorstore/` and is excluded from Git.
+The generated Chroma database is stored in `data/vectorstore/` and is excluded from Git. The `--reset` option clears the existing collection before rebuilding the index.
 
 ## Search without generation
 
@@ -162,25 +130,15 @@ uv run python scripts\search_index.py "What is scaled dot-product attention?"
 
 ## Ask questions with two-step RAG
 
-Dense retrieval:
+Choose between `dense`, `bm25`, and `hybrid` retrieval:
 
 ```powershell
 uv run python scripts\ask.py "What is scaled dot-product attention?" --retriever dense
-```
-
-BM25 retrieval:
-
-```powershell
 uv run python scripts\ask.py "What is scaled dot-product attention?" --retriever bm25
-```
-
-Hybrid retrieval:
-
-```powershell
 uv run python scripts\ask.py "What is scaled dot-product attention?" --retriever hybrid
 ```
 
-Display the retrieved chunks:
+To display the retrieved chunks:
 
 ```powershell
 uv run python scripts\ask.py "Why are positional encodings necessary?" --retriever hybrid --show-context
@@ -192,23 +150,32 @@ uv run python scripts\ask.py "Why are positional encodings necessary?" --retriev
 uv run python scripts\ask_agent.py "What is scaled dot-product attention?"
 ```
 
-Display the final evidence:
+To display the final retrieved evidence:
 
 ```powershell
 uv run python scripts\ask_agent.py "What is scaled dot-product attention?" --show-context
 ```
 
-Test query rewriting and abstention:
+An example question for exploring query rewriting and abstention behavior:
 
 ```powershell
-uv run python scripts\ask_agent.py "What was Ashish Vaswani's favorite food?"
+uv run python scripts\ask_agent.py "What is my favorite food?"
 ```
 
-The CLI reports:
+The agentic CLI reports the retrieval strategy, attempted queries, evidence grade, retry count, whether the question was answered, and cited pages and chunks. The number of rewrites can be controlled with `--max-retries`.
 
-- Whether the answer is grounded
-- Which retrieval strategy was used
-- How many retrieval attempts occurred
-- Which queries were tried
-- Why the final evidence was accepted or rejected
-- Which pages and chunks were cited
+## Tests and evaluation
+
+Run the automated tests:
+
+```powershell
+uv run pytest
+```
+
+Run the fixed-question evaluation for the **dense two-step RAG baseline**:
+
+```powershell
+uv run python evaluation\run_baseline.py
+```
+
+The evaluation uses `evaluation/dataset.json` and writes results to `evaluation/results/dense-rag-baseline.json` by default. Index the relevant source PDFs first. The baseline script does **not** evaluate the agentic workflow or compare all three retrieval strategies.
